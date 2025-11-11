@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns
+         http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+<!-- Created by igraph -->
+  <key id="v_account_id" for="node" attr.name="account_id" attr.type="double"/>
+  <key id="e_weight" for="edge" attr.name="weight" attr.type="double"/>
+  <key id="e_tweet_id" for="edge" attr.name="tweet_id" attr.type="string"/>
+  <key id="e_possible_sensitive" for="edge" attr.name="possible_sensitive" attr.type="boolean"/>
+  <graph id="G" edgedefault="undirected">
+    <node id="n0">
+      <data key="v_account_id">788952595</data>
+    </node>
+    <node id="n1">
+      <data key="v_account_id">41077970</data>
+    </node>
+    <node id="n2">
+      <data key="v_account_id">2171487918</data>
+    </node>
+    <node id="n3">
+      <data key="v_account_id">60483082</data>
+    </node>
+    <node id="n4">
+      <data key="v_account_id">2245624324</data>
+    </node>
+    <node id="n5">
+      <data key="v_account_id">338985020</data>
+    </node>
+    <node id="n6">
+      <data key="v_account_id">29431775</data>
+    </node>
+    <node id="n7">
+      <data key="v_account_id">16717501</data>
+    </node>
+    <node id="n8">
+      <data key="v_account_id">1666088336</data>
+    </node>
+    <node id="n9">
+      <data key="v_account_id">26735736</data>
+    </node>
+    <node id="n10">
+      <data key="v_account_id">864370472</data>
+    </node>
+    <node id="n11">
+      <data key="v_account_id">525733281</data>
+    </node>
+    <node id="n12">
+      <data key="v_account_id">2349646720</data>
+    </node>
+    <node id="n13">
+      <data key="v_account_id">130509788</data>
+    </node>
+    <node id="n14">
+      <data key="v_account_id">776485278</data>
+    </node>
+    <node id="n15">
+      <data key="v_account_id">19658826</data>
+    </node>
+    <edge source="n0" target="n1">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675827429953437696</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n2" target="n3">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675827368242515968</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n4" target="n5">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675827215972605953</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n6" target="n7">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675827194258698240</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n8" target="n9">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675827180908232704</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n10" target="n11">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675826951295234049</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n12" target="n13">
+      <data key="e_weight">1</data>
+      <data key="e_tweet_id">675826762543140864</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+    <edge source="n14" target="n15">
+      <data key="e_weight">0</data>
+      <data key="e_tweet_id">675826554404925440</data>
+      <data key="e_possible_sensitive">false</data>
+    </edge>
+  </graph>
+</graphml>
