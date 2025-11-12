@@ -8,7 +8,11 @@ import pandas as pd
 from tqdm import tqdm
 
 
-def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.tsv", sample:int=2260916):
+def process_tweets(
+    tweets: str = "./data/tweets.dat",
+    authors: str = "./data/accounts.tsv",
+    sample: int = 2260916,
+):
 
     authors_df = pd.read_csv(authors, sep="\t")
     author_meta = authors_df.set_index("author_id")[["Lang", "Type", "Stance"]].to_dict(
@@ -16,7 +20,7 @@ def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.
     )
 
     # buffer to not write each line to output individually
-    stop = 0
+    processed = 0
     buffer = []
     buffer_size = 10000
     retweet_edges = []
@@ -24,13 +28,16 @@ def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.
     # count number of tweets with multiple references (might be worth keeping them in; currently ~400 removed)
     multiple_references = 0
     # with open("tweets_output.jsonl", "w") as out_file, open("../data/first1000_tweets.dat", "r") as in_file:
-    with open(f"./data/{sample}_tweets.dat", "w") as out_file, open(
+    with open(f"./sampled_data/{sample}_tweets.dat", "w") as out_file, open(
         tweets, "r"
     ) as in_file:
         for line in tqdm(in_file, total=2260916):
-            stop += 1
             row = orjson.loads(line)
-            tweet = {"id": row["id"], "text": row["text"], "date": row["created_at"][:10]}
+            tweet = {
+                "id": row["id"],
+                "text": row["text"],
+                "date": row["created_at"][:10],
+            }
             author_id = int(row["author_id"])
             if author_id in author_meta:
                 tweet["account"] = {
@@ -46,6 +53,9 @@ def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.
 
             refs = row.get("referenced_tweets")
             if not isinstance(refs, list):
+                processed += 1
+                if processed == sample:
+                    break
                 continue
             if len(refs) != 1:
                 multiple_references += 1
@@ -67,13 +77,14 @@ def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.
                     row["id"],
                     row["possibly_sensitive"],
                 )
-                if tweet_type == "retweeted":                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   
+                if tweet_type == "retweeted":
                     retweet_edges.append(edge)
                 else:
                     reply_edges.append(edge)
-            
-            if stop == sample:
-                break
+
+                processed += 1
+                if processed == sample:
+                    break
 
         # add tweets still remaining in buffer
         if buffer:
@@ -94,9 +105,9 @@ def process_tweets(tweets:str="./data/tweets.dat", authors:str="./data/accounts.
     print("Number of multiple references", multiple_references)
 
     # write the graphs to .graphml files
-    reply_graph.write_graphml(f"./data/{sample}_reply.graphml")
-    retweet_graph.write_graphml(f"./data/{sample}_retweet.graphml")
+    reply_graph.write_graphml(f"./sampled_data/{sample}_reply.graphml")
+    retweet_graph.write_graphml(f"./sampled_data/{sample}_retweet.graphml")
 
 
 if __name__ == "__main__":
-    process_tweets(sample=500)  
+    process_tweets(sample=20000)
