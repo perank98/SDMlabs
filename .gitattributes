@@ -1,1 +1,2 @@
 sampled_data/2260916_tweets.dat filter=lfs diff=lfs merge=lfs -text
+sampled_data/2260916_only_tweets.jsonl filter=lfs diff=lfs merge=lfs -text
