@@ -4,9 +4,9 @@ import pandas as pd
 from utils import *
 
 if __name__ == "__main__":
-    graph = load_graph("./sampled_data/2260916_retweet.graphml")
-
-    summary = summarise_network(graph, name="20000_retweets", betweenness=True)
+    # graph = load_graph("./sampled_data/20000_retweet.graphml")
+    graph = ig.read("./sampled_data/all_retweets.graphml")
+    summary = summarise_network(graph, name="all_retweets")
     print_summary(summary, to_file=True)
 
     # draw_graph(graph, output="./plots/20000_retweets_betweenness.png", scale_with_degree=False)
@@ -16,12 +16,12 @@ if __name__ == "__main__":
     # # top 10 actors, in measures of degree and betweenness
     top_accounts = pd.read_csv("./data/accounts.tsv", sep="\t")
     
-    degree_actors, betweenness_actors = extract_top10_actors(graph, summary, top_accounts)
+    degree_actors = extract_top10_actors(graph, summary, top_accounts)
 
     with open("./top_actors/all_retweets.txt", "w") as f:
         f.write(degree_actors[["Type", "Stance", "Lang"]].to_string() + "\n")
-        f.write("#######################################\n")
-        f.write(betweenness_actors[["Type", "Stance", "Lang"]].to_string())
+        # f.write("#######################################\n")
+        # f.write(betweenness_actors[["Type", "Stance", "Lang"]].to_string())
 
     # task 1.7 and onwards
     gc = graph.connected_components().giant()

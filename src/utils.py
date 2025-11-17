@@ -3,7 +3,6 @@ import random
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
 
@@ -23,13 +22,17 @@ def load_graph(path: str, verbose: bool = False):
     return G_undirected
 
 
-def summarise_network(g: ig.Graph, name: str = "Graph", betweenness: bool = False):
+def summarise_network(g: ig.Graph, name:str = "Graph"):
     order = g.vcount()
     size = g.ecount()
     num_components = len(g.connected_components())
     p = g.density(loops=False)
     transitivity = g.transitivity_undirected()
     deg = g.degree()
+
+    # num_samples = min(1000, g.vcount())
+    # sampled_vertices = random.sample(g.vs.indices, num_samples)
+    # betweenness = g.betweenness(vertices=sampled_vertices, cutoff=5)
 
     # use log-log axes (?)
     fig, ax = plt.subplots(figsize=(7, 7))
@@ -40,6 +43,8 @@ def summarise_network(g: ig.Graph, name: str = "Graph", betweenness: bool = Fals
 
     ax.set_title(f"Degree Distribution (log–log) for {name}")
 
+    
+
     summary = {
         "name": name,
         "order": order,
@@ -49,11 +54,8 @@ def summarise_network(g: ig.Graph, name: str = "Graph", betweenness: bool = Fals
         "density": p,
         "transitivity": transitivity,
         "degree_plot": fig,
-        "betweenness": "Not calculated",
+        # "betweenness": betweenness
     }
-
-    if betweenness:
-        summary["betweenness"] = betweenness = g.betweenness(cutoff=5)
 
     return summary
 
@@ -117,43 +119,18 @@ def extract_top10_actors(g: ig.Graph, graph_summary: dict, df):
     degree_indeces = np.argmax(degrees)
     degree_indeces = np.argpartition(degrees, -10)[-10:]
 
-    betweenness = graph_summary["betweenness"]
-    betweenness_indeces = np.argmax(betweenness)
-    betweenness_indeces = np.argpartition(betweenness, -10)[-10:]
+    # betweenness = graph_summary["betweenness"]
+    # betweenness_indeces = np.argmax(betweenness)
+    # betweenness_indeces = np.argpartition(betweenness, -10)[-10:]
 
     # Get corresponding account IDs
     degree_ids = [g.vs[i]["account_id"] for i in degree_indeces]
-    betweenness_ids = [g.vs[i]["account_id"] for i in betweenness_indeces]
-
-
-    # --- Here we join back to df to get their sizes and stances ---
-
+    # betweenness_ids = [g.vs[i]["account_id"] for i in betweenness_indeces]
     
     degree_df = df[df["author_id"].isin(degree_ids)]
-    betweenness_df = df[df["author_id"].isin(betweenness_ids)]
+    # betweenness_df = df[df["author_id"].isin(betweenness_ids)]
 
-    # degree_df = degree_df.rename(
-    #     columns={
-    #         "author_id": "degree_author_id",
-    #         "vector_size": "degree_vector_size",
-    #         "Stance": "degree_stance",
-    #     }
-    # )
-
-    # betweenness_df = betweenness_df.rename(
-    #     columns={
-    #         "author_id": "betweenness_author_id",
-    #         "vector_size": "betweenness_vector_size",
-    #         "Stance": "betweenness_stance",
-    #     }
-    # )
-
-    # result_df = pd.concat(
-    #     [degree_df.reset_index(drop=True), betweenness_df.reset_index(drop=True)],
-    #     axis=1,
-    # )
-
-    return (degree_df, betweenness_df)
+    return degree_df   # , betweenness_df)
 
 
 def random_walk_graph(g: ig.Graph, num_iter=1000):
@@ -228,7 +205,7 @@ def plot_histogram(counts, outfile):
     plt.title("Histogram of Integer Values")
     plt.xticks(range(min(counts), max(counts) + 1))
     plt.savefig(
-        "./plots/random_walk_histograms/" + outfile + "_full_token_passing.svg",
+        "./plots/random_walk_histograms/" + outfile + "_token_passing.svg",
         bbox_inches="tight",
     )  # can also use .pdf, .svg, etc.
     plt.close()
