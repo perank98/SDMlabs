@@ -1,9 +1,12 @@
 import random
 
+from collections import defaultdict
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
+import orjson
 from tqdm import tqdm
+from datetime import timezone, datetime
 
 
 def load_graph(path: str, verbose: bool = False):
@@ -69,7 +72,7 @@ def print_summary(graph_summary, to_file: bool = False):
         f"Number of components: {graph_summary["num_components"]}",
         f"Density: {graph_summary["density"]}",
         f"Clustering coefficient / Transitivity: {graph_summary["transitivity"]}",
-        f"Betweenness: {np.mean(graph_summary["betweenness"])}",
+        # f"Betweenness: {np.mean(graph_summary["betweenness"])}",
     ]
 
     # optionally save to file
@@ -96,7 +99,7 @@ def draw_graph(g: ig.Graph, output: str, scale_with_degree: bool = True):
     g.es["color"] = "rgba(0,0,0,0.5)"
 
     if scale_with_degree:
-        g.vs["size"] = [2 + d * 0.3 for d in g.degree()]
+        g.vs["size"] = [2 + d * 0.1 for d in g.degree()]
 
     else:
         betweenness = g.betweenness(cutoff=5)
@@ -209,3 +212,65 @@ def plot_histogram(counts, outfile):
         bbox_inches="tight",
     )  # can also use .pdf, .svg, etc.
     plt.close()
+
+
+def load_tweets_jsonl(path):
+    """Return list of dicts: {account_id:int, ts:int (unix seconds), urls:list[str], id:str}"""
+    out = []
+    with open(path, "r", encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            t = orjson.loads(line)
+            acc_id = int(t["account"]["id"])
+            ts = int(datetime.fromisoformat(t["date"]).replace(tzinfo=timezone.utc).timestamp())
+            urls = t.get("urls", []) or []
+            out.append({"id": t.get("id"), "account_id": acc_id, "ts": ts, "urls": urls})
+    return out
+
+
+def get_coaction_dict(tweets:list[dict], s:int=1, s_lower:int=10000):
+    url_index = defaultdict(list)
+    for tweet in tweets:
+        for url in tweet.get("urls", []):
+            url_index[url].append((tweet["ts"], tweet["account_id"]))
+    edges = {}
+    # Process each URL separately
+    for url, entries in tqdm(url_index.items()):
+        # Sort by timestamp to allow sliding window
+        entries.sort()  # sorts by timestamp automatically
+        # Sliding window over sorted timestamps
+        start = 0
+        for end in range(len(entries)):
+            t2, acc2 = entries[end]
+            # Slide start pointer until window condition (≤ 2 seconds) is satisfied
+            while t2 - entries[start][0] > s:
+                start += 1
+            # Compare each pair within the small sliding window
+            for i in range(start, end):
+                t1, acc1 = entries[i]
+                # Count edge
+                edges[(acc1, acc2)] = edges.get((acc1, acc2), 0) + 1
+
+    return edges
+
+
+def get_graph_from_coaction_dict(edges, r:int=5)-> ig.Graph:
+        graph_edges = []
+        for key, value in edges.items():
+            if key[0] == key[1]:
+                continue
+            if value >= r:
+                edge = (
+                        key[0],
+                        key[1],
+                        value,
+                    )
+                graph_edges.append(edge)
+        
+        bot_graph = ig.Graph.TupleList(
+            graph_edges,
+            vertex_name_attr="account_id",
+            edge_attrs=["weight", "tweet_id", "possible_sensitive"],
+        )
+        return bot_graph
