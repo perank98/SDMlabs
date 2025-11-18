@@ -1,7 +1,4 @@
-import igraph as ig
-import pandas as pd
-from tqdm import tqdm
-
+from coaction_analysis import *
 from utils import *
 
 if __name__ == "__main__":
