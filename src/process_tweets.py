@@ -81,11 +81,7 @@ def process_tweets(
     # buffer to not write each line to output individually
     processed = 0
     buffer = []
-    buffer_size = 10000
-    retweet_edges = []
-    reply_edges = []
-    # count number of tweets with multiple references (might be worth keeping them in; currently ~400 removed)
-    multiple_references = 0
+    buffer_size = 50000
     # with open("tweets_output.jsonl", "w") as out_file, open("../data/first1000_tweets.dat", "r") as in_file:
     with open(f"./sampled_data/{sample}_tweets.jsonl", "w") as out_file, open(
         tweets, "r"
@@ -110,22 +106,40 @@ def process_tweets(
     
             if row.get("entities", {}).get("urls", []):
                 tweet["urls"] = [url["expanded_url"] for url in row["entities"]["urls"]]
-            buffer.append(orjson.dumps(tweet).decode())
+            refs = row.get("referenced_tweets")
+            if not refs:
+                buffer.append(orjson.dumps(tweet).decode())
             if len(buffer) >= buffer_size:
                 out_file.write("\n".join(buffer) + "\n")
                 buffer.clear()
 
+        # add tweets still remaining in buffer
+        if buffer:
+            out_file.write("\n".join(buffer) + "\n")
+
+
+def create_networks(
+    tweets: str = "./data/tweets.dat",
+    sample: int = 2260916,
+)-> None:
+    
+    retweet_edges = []
+    reply_edges = []
+    processed = 0
+    with open(tweets, "r") as in_file:
+        for line in tqdm(in_file, total=2260916):
+            processed += 1
+            if processed > sample:
+                break
+            row = orjson.loads(line)
+            author_id = int(row["author_id"])
             refs = row.get("referenced_tweets")
-            if not isinstance(refs, list):
-                continue
             if len(refs) != 1:
-                multiple_references += 1
                 continue
             tweet_type = refs[0]["type"]
             if tweet_type in ["retweeted", "replied_to"]:
                 # Extract target account
-                entities = row.get("entities", {})
-                mentions = entities.get("mentions", [])
+                mentions = row.get("entities", {}).get("mentions", [])
                 if not mentions:
                     continue
                 target = int(mentions[0]["id"])
@@ -143,10 +157,6 @@ def process_tweets(
                 else:
                     reply_edges.append(edge)
 
-        # add tweets still remaining in buffer
-        if buffer:
-            out_file.write("\n".join(buffer) + "\n")
-
     # create a reply & a retweet graph
     reply_graph = ig.Graph.TupleList(
         reply_edges,
@@ -159,12 +169,9 @@ def process_tweets(
         edge_attrs=["weight", "tweet_id", "possible_sensitive"],
     )
 
-    print("Number of multiple references", multiple_references)
-
     # write the graphs to .graphml files
     reply_graph.write_graphml(f"./sampled_data/{sample}_reply.graphml")
     retweet_graph.write_graphml(f"./sampled_data/{sample}_retweet.graphml")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process tweet dataset.")
@@ -178,7 +185,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.num is None:
-        process_tweets() # processes full dataset
-    else:
-        process_tweets(sample=args.num)
+    # if args.num is None:
+    #     process_tweets() # processes full dataset
+    # else:
+    #     process_tweets(sample=args.num)
+    
+    create_networks()
