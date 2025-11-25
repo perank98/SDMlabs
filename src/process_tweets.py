@@ -31,7 +31,7 @@ def process_tweets(
     tweets: str = "./data/tweets.dat",
     authors: str = "./data/accounts.tsv",
     sample: int = 2260916,
-)-> None:
+) -> None:
     """
     Process raw tweet data, extract metadata, and build reply/retweet graphs.
 
@@ -40,7 +40,7 @@ def process_tweets(
     tweets : str, optional
         Path to the newline-delimited JSON file containing tweet objects.
     authors : str, optional
-        Path to a TSV file mapping IDs of popular accounts to their language, 
+        Path to a TSV file mapping IDs of popular accounts to their language,
         type, and stance.
     sample : int, optional
         Maximum number of tweet lines to process. Defaults to 2,260,916
@@ -59,18 +59,9 @@ def process_tweets(
         - author metadata
         - expanded URLs (if present)
     3. Writes simplified tweets into a `.jsonl` file in JSONL format.
-    4. Parses interaction types (retweets and replies) and constructs
-       edge lists with associated properties.
-    5. Builds two directed igraph graphs:
-        - reply_graph
-        - retweet_graph
-    6. Outputs the graphs in GraphML format.
-
     ------------
     Writes files to disk:
         - ./sampled_data/<sample>_tweets.dat
-        - ./sampled_data/<sample>_reply.graphml
-        - ./sampled_data/<sample>_retweet.graphml
     """
 
     authors_df = pd.read_csv(authors, sep="\t")
@@ -99,11 +90,14 @@ def process_tweets(
             author_id = int(row["author_id"])
             tweet["account"] = {"id": author_id}
             if author_id in author_meta:
-                tweet["account"].update({
-                    "language": author_meta[author_id]["Lang"],
-                    "type": author_meta[author_id]["Type"],
-                    "stance": author_meta[author_id]["Stance"]})
-    
+                tweet["account"].update(
+                    {
+                        "language": author_meta[author_id]["Lang"],
+                        "type": author_meta[author_id]["Type"],
+                        "stance": author_meta[author_id]["Stance"],
+                    }
+                )
+
             if row.get("entities", {}).get("urls", []):
                 tweet["urls"] = [url["expanded_url"] for url in row["entities"]["urls"]]
             refs = row.get("referenced_tweets")
@@ -121,8 +115,8 @@ def process_tweets(
 def create_networks(
     tweets: str = "./data/tweets.dat",
     sample: int = 2260916,
-)-> None:
-    
+) -> None:
+
     retweet_edges = []
     reply_edges = []
     processed = 0
@@ -173,6 +167,7 @@ def create_networks(
     reply_graph.write_graphml(f"./sampled_data/{sample}_reply.graphml")
     retweet_graph.write_graphml(f"./sampled_data/{sample}_retweet.graphml")
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process tweet dataset.")
     parser.add_argument(
@@ -189,5 +184,5 @@ if __name__ == "__main__":
     #     process_tweets() # processes full dataset
     # else:
     #     process_tweets(sample=args.num)
-    
+
     create_networks()

@@ -9,11 +9,10 @@ if __name__ == "__main__":
 
     # # draw_graph(graph, output="./plots/20000_retweets_betweenness.png", scale_with_degree=False)
     # # draw_graph(graph, output="./plots/20000_retweets_degree.png", scale_with_degree=True)
-    
 
     # # # top 10 actors, in measures of degree and betweenness
     # top_accounts = pd.read_csv("./data/accounts.tsv", sep="\t")
-    
+
     # degree_actors = extract_top10_actors(graph, summary, top_accounts)
 
     # with open("./top_actors/all_retweets.txt", "w") as f:
@@ -36,7 +35,6 @@ if __name__ == "__main__":
     # # er_summaries = [summarise_network(er, name=f"Erdos Renyi {ind+1}") for ind, er in enumerate(er_list)]
     # #for summary in er_summaries:
     # #    print_summary(summary, to_file=True)
-
 
     # # task 2.2: produce 3 BA networks, same order, same ap matrix as retweet network
     # # n = len(gc.vs)
@@ -87,7 +85,7 @@ if __name__ == "__main__":
     # for graph, name in zip([graph, er1, ba1, ws1, rewired_graph],["original", "erdos_renyi", "barabasi", "watts_strogatz","rewired_graph"]):
     #     counts = random_walk_graph(graph)
     #     plot_histogram(counts, name)
-    
+
     # # task 3.2
     # for graph, name in zip([graph, er1, ba1, ws1, rewired_graph],["original", "erdos_renyi", "barabasi", "watts_strogatz","rewired_graph"]):
     #     positive_actors = information_diffusion(graph, num_iter=5, p=0.01)
@@ -103,17 +101,62 @@ if __name__ == "__main__":
 
     tweets = load_tweets_jsonl("./sampled_data/2260916_only_tweets.jsonl")
 
-    bot_edges = get_coaction_dict(tweets)
+    # bot_edges = get_coaction_dict(tweets)
     ideology_edges = get_coaction_dict(tweets, s=600, s_lower=5)
 
-    bot_graph = get_graph_from_coaction_dict(bot_edges)
-    ideology_graph = get_graph_from_coaction_dict(ideology_edges, r=25)
+    # bot_graph = get_graph_from_coaction_dict(bot_edges, r=5)
+    ideology_graph = get_graph_from_coaction_dict(ideology_edges, r=20)
 
-    bot_summary = summarise_network(bot_graph, name="Bot Network")
+    # bot_summary = summarise_network(bot_graph, name="Bot Network")
     ideology_summary = summarise_network(ideology_graph, name="Ideology Network")
-    print_summary(bot_summary, to_file=True)
+    # print_summary(bot_summary, to_file=True)
     print_summary(ideology_summary, to_file=True)
 
-    draw_graph(bot_graph, output="./plots/bot_graph.svg")
-    draw_graph(ideology_graph, output="./plots/ideology_graph.svg")
-    
+    author_ids = []
+    biggest_ideology_cluster = ideology_graph.connected_components().giant()
+    for vertex in biggest_ideology_cluster.vs:
+        author_ids.append(vertex["account_id"])
+    print("Number of Accounts: ", len(author_ids))
+
+    print(count_account_metadata(author_ids))
+    # draw_graph(bot_graph, output="./plots/bot_graph.svg")
+    # draw_graph(ideology_graph, output="./plots/ideology_graph.svg")
+
+    # communities = ideology_graph.community_multilevel()
+
+    # num_communities = len(communities)
+    # palette = ig.RainbowPalette(n=num_communities)
+    # for i, community in enumerate(communities):
+    #     ideology_graph.vs[community]["color"] = i
+    #     community_edges = ideology_graph.es.select(_within=community)
+    #     community_edges["color"] = i
+
+    # fig, ax = plt.subplots()
+    # ig.plot(
+    #     communities,
+    #     palette=palette,
+    #     edge_width=1,
+    #     target=ax,
+    #     vertex_size=20,
+    # )
+
+    # # Create a custom color legend
+    # legend_handles = []
+    # for i in range(num_communities):
+    #     handle = ax.scatter(
+    #         [],
+    #         [],
+    #         s=100,
+    #         facecolor=palette.get(i),
+    #         edgecolor="k",
+    #         label=i,
+    #     )
+    #     legend_handles.append(handle)
+    # ax.legend(
+    #     handles=legend_handles,
+    #     title="Community:",
+    #     bbox_to_anchor=(0, 1.0),
+    #     bbox_transform=ax.transAxes,
+    # )
+
+    # fig.savefig("./plots/ideology_communities.svg", dpi=600, bbox_inches="tight")

@@ -1,8 +1,10 @@
-from collections import defaultdict
+from collections import Counter, defaultdict
 from tqdm import tqdm
 import igraph as ig
+import pandas as pd
 
-def get_coaction_dict(tweets:list[dict], s:int=1, s_lower:int=10000):
+
+def get_coaction_dict(tweets: list[dict], s: int = 1, s_lower: int = 10000):
     url_index = defaultdict(list)
     for tweet in tweets:
         for url in tweet.get("urls", []):
@@ -28,22 +30,57 @@ def get_coaction_dict(tweets:list[dict], s:int=1, s_lower:int=10000):
     return edges
 
 
-def get_graph_from_coaction_dict(edges, r:int=5)-> ig.Graph:
-        graph_edges = []
-        for key, value in edges.items():
-            if key[0] == key[1]:
-                continue
-            if value >= r:
-                edge = (
-                        key[0],
-                        key[1],
-                        value,
-                    )
-                graph_edges.append(edge)
-        
-        bot_graph = ig.Graph.TupleList(
-            graph_edges,
-            vertex_name_attr="account_id",
-            edge_attrs=["weight", "tweet_id", "possible_sensitive"],
-        )
-        return bot_graph
+def get_graph_from_coaction_dict(edges, r: int = 5) -> ig.Graph:
+    graph_edges = []
+    for key, value in edges.items():
+        if key[0] == key[1]:
+            continue
+        if value >= r:
+            edge = (
+                key[0],
+                key[1],
+                value,
+            )
+            graph_edges.append(edge)
+
+    bot_graph = ig.Graph.TupleList(
+        graph_edges,
+        vertex_name_attr="account_id",
+        edge_attrs=["weight", "tweet_id", "possible_sensitive"],
+    )
+    return bot_graph
+
+
+def count_account_metadata(account_ids, tsv_path="./data/accounts.tsv"):
+    """
+    Count languages, stances, and types among a list of account_ids.
+
+    Parameters
+    ----------
+    account_ids : list[int]
+        The account IDs you want to analyze.
+    tsv_path : str
+        Path to the accounts metadata TSV.
+
+    Returns
+    -------
+    dict
+        A dictionary with Counter objects:
+        {
+            "languages": Counter,
+            "stances": Counter,
+            "types": Counter
+        }
+    """
+    # Load metadata
+    df = pd.read_csv(tsv_path, sep="\t")
+
+    # Filter only relevant accounts
+    selected = df[df["author_id"].isin(account_ids)]
+
+    # Count categories
+    lang_counts = Counter(selected["Lang"])
+    stance_counts = Counter(selected["Stance"])
+    type_counts = Counter(selected["Type"])
+
+    return {"languages": lang_counts, "stances": stance_counts, "types": type_counts}
