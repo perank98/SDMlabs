@@ -1,12 +1,13 @@
 import random
 
-from collections import defaultdict
 import igraph as ig
 import matplotlib.pyplot as plt
 import numpy as np
 import orjson
 from tqdm import tqdm
 from datetime import timezone, datetime
+import pandas as pd
+import re
 
 
 def load_graph(path: str, verbose: bool = False):
@@ -33,11 +34,7 @@ def summarise_network(g: ig.Graph, name:str = "Graph"):
     transitivity = g.transitivity_undirected()
     deg = g.degree()
 
-    # num_samples = min(1000, g.vcount())
-    # sampled_vertices = random.sample(g.vs.indices, num_samples)
-    # betweenness = g.betweenness(vertices=sampled_vertices, cutoff=5)
-
-    # use log-log axes (?)
+    # use log-log axes
     fig, ax = plt.subplots(figsize=(7, 7))
     ax.hist(deg, max(deg), histtype="barstacked")
 
@@ -45,8 +42,6 @@ def summarise_network(g: ig.Graph, name:str = "Graph"):
     ax.set_yscale("log")
 
     ax.set_title(f"Degree Distribution (log–log) for {name}")
-
-    
 
     summary = {
         "name": name,
@@ -56,8 +51,7 @@ def summarise_network(g: ig.Graph, name:str = "Graph"):
         "num_components": num_components,
         "density": p,
         "transitivity": transitivity,
-        "degree_plot": fig,
-        # "betweenness": betweenness
+        "degree_plot": fig
     }
 
     return summary
@@ -71,8 +65,7 @@ def print_summary(graph_summary, to_file: bool = False):
         f"Size (number of edges): {graph_summary["size"]}",
         f"Number of components: {graph_summary["num_components"]}",
         f"Density: {graph_summary["density"]}",
-        f"Clustering coefficient / Transitivity: {graph_summary["transitivity"]}",
-        # f"Betweenness: {np.mean(graph_summary["betweenness"])}",
+        f"Clustering coefficient / Transitivity: {graph_summary["transitivity"]}"
     ]
 
     # optionally save to file
@@ -122,18 +115,11 @@ def extract_top10_actors(g: ig.Graph, graph_summary: dict, df):
     degree_indeces = np.argmax(degrees)
     degree_indeces = np.argpartition(degrees, -10)[-10:]
 
-    # betweenness = graph_summary["betweenness"]
-    # betweenness_indeces = np.argmax(betweenness)
-    # betweenness_indeces = np.argpartition(betweenness, -10)[-10:]
-
     # Get corresponding account IDs
     degree_ids = [g.vs[i]["account_id"] for i in degree_indeces]
-    # betweenness_ids = [g.vs[i]["account_id"] for i in betweenness_indeces]
-    
     degree_df = df[df["author_id"].isin(degree_ids)]
-    # betweenness_df = df[df["author_id"].isin(betweenness_ids)]
 
-    return degree_df   # , betweenness_df)
+    return degree_df
 
 
 def random_walk_graph(g: ig.Graph, num_iter=1000):
@@ -227,3 +213,32 @@ def load_tweets_jsonl(path):
             urls = t.get("urls", []) or []
             out.append({"id": t.get("id"), "account_id": acc_id, "ts": ts, "urls": urls})
     return out
+
+def load_dictionary(path):
+    df = pd.read_csv(path, sep=";", header=0, dtype=str, encoding="cp1252")
+    df = df[["TERM", "SENTIMENT"]].dropna()
+    df["TERM"] = df["TERM"].str.strip().str.lower()
+    df["SENTIMENT"] = pd.to_numeric(df["SENTIMENT"].str.strip(), errors="coerce")
+    df = df.dropna(subset=["SENTIMENT"])
+    df["SENTIMENT"] = df["SENTIMENT"].astype(int)
+    df = df.drop_duplicates(subset=["TERM"], keep="last")
+    return dict(zip(df["TERM"], df["SENTIMENT"]))
+
+
+def annotate_with_lexicon(text, lexicon):
+
+    tokens = re.findall(r"[A-Za-z]+", text.lower())
+
+    scores = [lexicon[t] for t in tokens if t in lexicon]
+
+    if not scores:
+        return 0
+
+    s = sum(scores)
+
+    if s > 0:
+        return 1
+    elif s < 0:
+        return -1
+    else:
+        return 0

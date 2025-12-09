@@ -73,7 +73,7 @@ def process_tweets(
     processed = 0
     buffer = []
     buffer_size = 50000
-    # with open("tweets_output.jsonl", "w") as out_file, open("../data/first1000_tweets.dat", "r") as in_file:
+    
     with open(f"./sampled_data/{sample}_tweets.jsonl", "w") as out_file, open(
         tweets, "r"
     ) as in_file:
@@ -85,8 +85,11 @@ def process_tweets(
             tweet = {
                 "id": row["id"],
                 "text": row["text"],
-                "date": row["created_at"][:19],
+                "date": row["created_at"][:19]
             }
+            if row.get("attachments", None) is not None:
+                if row["attachments"].get("media_keys", None) is not None:
+                    tweet["media"] = row["attachments"]["media_keys"][0]
             author_id = int(row["author_id"])
             tweet["account"] = {"id": author_id}
             if author_id in author_meta:
@@ -101,8 +104,8 @@ def process_tweets(
             if row.get("entities", {}).get("urls", []):
                 tweet["urls"] = [url["expanded_url"] for url in row["entities"]["urls"]]
             refs = row.get("referenced_tweets")
-            if not refs:
-                buffer.append(orjson.dumps(tweet).decode())
+            # if not refs:
+            buffer.append(orjson.dumps(tweet).decode())
             if len(buffer) >= buffer_size:
                 out_file.write("\n".join(buffer) + "\n")
                 buffer.clear()
@@ -180,9 +183,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # if args.num is None:
-    #     process_tweets() # processes full dataset
-    # else:
-    #     process_tweets(sample=args.num)
+    if args.num is None:
+        process_tweets() # processes full dataset
+    else:
+        process_tweets(sample=args.num)
 
-    create_networks()
+    # create_networks()
